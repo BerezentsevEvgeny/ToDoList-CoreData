@@ -6,12 +6,11 @@
 //
 
 import UIKit
-import CoreData
 
 class TaskListViewController: UITableViewController {
-
+    
     private let context = StorageManager.shared.persistentContainer.viewContext
-
+    
     private let cellID = "cell"
     private var taskList: [Task] = []
     
@@ -20,7 +19,8 @@ class TaskListViewController: UITableViewController {
         view.backgroundColor = .white
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellID)
         setupNavigationBar()
-        fetchData()
+//        fetchData()
+        fetchTasks()
     }
 
     private func setupNavigationBar() {
@@ -53,21 +53,27 @@ class TaskListViewController: UITableViewController {
         showAlert(with: "New Task", and: "What do you want to do?")
     }
     
-    private func fetchData() {
-        let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
-        
-        do {
-            taskList = try context.fetch(fetchRequest)
-        } catch let error {
-            print(error.localizedDescription)
+//    private func fetchData() {
+//        let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
+//        
+//        do {
+//            taskList = try context.fetch(fetchRequest)
+//        } catch let error {
+//            print(error.localizedDescription)
+//        }
+//    }
+    private func fetchTasks() {
+        StorageManager.shared.fetchData { tasks in
+            taskList = tasks
         }
     }
+    
     
     private func showAlert(with title: String, and massage: String) {
         let alert = UIAlertController(title: title, message: massage, preferredStyle: .alert)
         let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
             guard let task = alert.textFields?.first?.text, !task.isEmpty else { return }
-            self.save(task)
+            self.saveData(task)
         }
         let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
         alert.addAction(saveAction)
@@ -78,25 +84,45 @@ class TaskListViewController: UITableViewController {
         present(alert, animated: true)
     }
     
-    private func save(_ taskName: String) {
-        guard let entiyDescription = NSEntityDescription.entity(forEntityName: "Task", in: context) else {
-            return
-        }
-        guard let task = NSManagedObject(entity: entiyDescription, insertInto: context) as? Task else { return }
-        task.name = taskName
-        taskList.append(task)
-        
-        let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
-        tableView.insertRows(at: [cellIndex], with: .automatic)
-        
-        if context.hasChanges {
-            do {
-                try context.save()
-            } catch let error {
-                print(error.localizedDescription)
+//    private func save(_ taskName: String) {
+//        guard let entiyDescription = NSEntityDescription.entity(forEntityName: "Task", in: context) else {
+//            return
+//        }
+//        guard let task = NSManagedObject(entity: entiyDescription, insertInto: context) as? Task else { return }
+//        task.name = taskName
+//        taskList.append(task)
+//
+//        let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
+//        tableView.insertRows(at: [cellIndex], with: .automatic)
+//
+//        if context.hasChanges {
+//            do {
+//                try context.save()
+//            } catch let error {
+//                print(error.localizedDescription)
+//            }
+//        }
+//    }
+    
+    private func saveData(_ taskName: String) {
+        StorageManager.shared.saveData(taskName) { task in
+            taskList.append(task)
+            let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
+            tableView.insertRows(at: [cellIndex], with: .automatic)
+
+            if context.hasChanges {
+                do {
+                    try context.save()
+                } catch let error {
+                    print(error.localizedDescription)
+                }
             }
         }
     }
+    
+    
+    
+     
 }
 
 //MARK: - DataSource

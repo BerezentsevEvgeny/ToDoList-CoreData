@@ -43,5 +43,35 @@ class StorageManager {
     }
     
     
+    // MARK: - Fetch data from base
+    
+    func fetchData(completion: ([Task])-> Void) {
+        let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
+        
+        do {
+            let taskList = try persistentContainer.viewContext.fetch(fetchRequest)
+            completion(taskList)
+        } catch let error {
+            print(error.localizedDescription)
+        }
+    }
+    
+    // MARK: - Saving data 
+    
+    func saveData(_ taskName: String, completion: (Task)->Void) {
+        guard let entiyDescription = NSEntityDescription.entity(forEntityName: "Task", in: persistentContainer.viewContext) else {
+            return
+        }
+        guard let task = NSManagedObject(entity: entiyDescription, insertInto: persistentContainer.viewContext) as? Task else { return }
+        task.name = taskName
+        completion(task)
+
+    }
+    
+    
+
+
+    
+    
     
 }
